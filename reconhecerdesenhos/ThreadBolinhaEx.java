@@ -8,12 +8,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.util.Random;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import javax.swing.JButton;
-
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -130,7 +125,6 @@ public class ThreadBolinhaEx extends JPanel {
      */
     static ThreadBolinhaEx painel = new ThreadBolinhaEx();
     static BolinhasThread bolinhasThread;
-    static JButton treinarBtn;
 
     public static void main(String[] args) {
         JFrame frame = new JFrame();
@@ -140,29 +134,5 @@ public class ThreadBolinhaEx extends JPanel {
         frame.setVisible(true);
         bolinhasThread = new BolinhasThread(painel, 100);
         bolinhasThread.start();
-        // Botão Treinar
-        treinarBtn = new JButton("Treinar");
-        frame.getContentPane().add(treinarBtn, BorderLayout.SOUTH);
-        treinarBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (contBolinhas >= bolinhasThread.bolinhas.length) {
-                    int[] projVert = painel.getProjecaoVertical(bolinhasThread.bolinhas);
-                    int[] projHori = painel.getProjecaoHorizontal(bolinhasThread.bolinhas);
-                    String resposta = JOptionPane.showInputDialog(frame, "É uma árvore? (1=Sim, 0=Não)");
-                    int saidaEsperada = 0;
-                    try {
-                        saidaEsperada = Integer.parseInt(resposta);
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(frame, "Entrada inválida. Use 1 ou 0.");
-                        return;
-                    }
-                    RedeNeural rn = new RedeNeural(projVert, projHori);
-                    rn.treinar(projVert, projHori, saidaEsperada, 0.1, 1000);
-                    JOptionPane.showMessageDialog(frame, "Treinamento concluído!");
-                } else {
-                    JOptionPane.showMessageDialog(frame, "Desenhe todas as bolinhas antes de treinar!");
-                }
-            }
-        });
     }
 }

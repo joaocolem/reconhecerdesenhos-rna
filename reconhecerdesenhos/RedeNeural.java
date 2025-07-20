@@ -71,49 +71,6 @@ public class RedeNeural {
         return 0;
     }
 
-    // Função sigmoid para treinamento
-    private double sigmoid(double x) {
-        return 1.0 / (1.0 + Math.exp(-x));
-    }
-
-    // Derivada da sigmoid
-    private double sigmoidDerivada(double x) {
-        double sig = sigmoid(x);
-        return sig * (1 - sig);
-    }
-
-    // Método de treinamento simples
-    public void treinar(int[] projVertical, int[] projHorizontal, int saidaEsperada, double taxaAprendizagem,
-            int epocas) {
-        for (int epoca = 0; epoca < epocas; epoca++) {
-            // Configura entrada
-            for (int c = 0; c < 10; c++) {
-                this.xk[c] = projVertical[c];
-                this.xk[c + 10] = projHorizontal[c];
-            }
-            // Forward
-            h1 = 0;
-            h2 = 0;
-            for (int c = 0; c < v1k.length; c++) {
-                h1 += v1k[c] * xk[c];
-                h2 += v2k[c] * xk[c];
-            }
-            double y1_linear = (h1 * w11 + h2 * w12);
-            double y1_sigmoid = sigmoid(y1_linear);
-            // Erro simples
-            double erro = saidaEsperada - y1_sigmoid;
-            // Retropropagação (ajuste dos pesos)
-            double gradSaida = erro * sigmoidDerivada(y1_linear);
-            // Atualiza pesos
-            for (int c = 0; c < v1k.length; c++) {
-                v1k[c] += taxaAprendizagem * gradSaida * xk[c];
-                v2k[c] += taxaAprendizagem * gradSaida * xk[c];
-            }
-            w11 += taxaAprendizagem * gradSaida * h1;
-            w12 += taxaAprendizagem * gradSaida * h2;
-        }
-    }
-
     public void printModelo() {
         System.out.println("b1.redeNeural.w11 = " + w11 + ";");
         System.out.println("b1.redeNeural.w12 = " + w12 + ";");
