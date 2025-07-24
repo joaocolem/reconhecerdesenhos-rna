@@ -11,6 +11,7 @@ import java.util.Random;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.JButton;
 
 /**
  * This is an extremely scaled-down sketching canvas; with it you
@@ -19,6 +20,7 @@ import javax.swing.SwingUtilities;
  */
 public class ThreadBolinhaEx extends JPanel {
     static int contBolinhas = 0;
+    RedeNeural ultimaRedeNeural = null; // Guarda a última rede neural usada
 
     public ThreadBolinhaEx() {
         addMouseListener(new MouseAdapter() {
@@ -41,6 +43,7 @@ public class ThreadBolinhaEx extends JPanel {
                 contBolinhas++;
             }
         });
+        // Removido o botão Treinar do construtor
     }
 
     public void desenha(Bolinha[] bolinhas) {
@@ -55,6 +58,7 @@ public class ThreadBolinhaEx extends JPanel {
             int[] projVert = this.getProjecaoVertical(bolinhasThread.bolinhas);
             int[] projHori = this.getProjecaoHorizontal(bolinhasThread.bolinhas);
             RedeNeural rn = new RedeNeural(projVert, projHori);
+            ultimaRedeNeural = rn; // Guarda a última rede neural usada
             if (rn.contUsos == 0)
                 rn.aplica(47);// 49
             if (rn.saida == 1 && rn.contUsos == 1) {
@@ -128,9 +132,27 @@ public class ThreadBolinhaEx extends JPanel {
 
     public static void main(String[] args) {
         JFrame frame = new JFrame();
-        frame.getContentPane().add(painel, BorderLayout.CENTER);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(200, 250);
+
+        painel = new ThreadBolinhaEx();
+        frame.getContentPane().add(painel, BorderLayout.CENTER);
+
+        // Cria o painel de botões
+        JPanel painelBotoes = new JPanel();
+        JButton btnTreinar = new JButton("Treinar");
+        btnTreinar.addActionListener(e -> {
+            if (painel.ultimaRedeNeural != null) {
+                painel.ultimaRedeNeural.treinar(47, 47);
+                System.out.println("Treinamento realizado!");
+                painel.ultimaRedeNeural.printModelo(); // Mostra os pesos atualizados
+            } else {
+                System.out.println("Nenhuma rede neural para treinar.");
+            }
+        });
+        painelBotoes.add(btnTreinar);
+        frame.getContentPane().add(painelBotoes, BorderLayout.SOUTH);
+
         frame.setVisible(true);
         bolinhasThread = new BolinhasThread(painel, 100);
         bolinhasThread.start();

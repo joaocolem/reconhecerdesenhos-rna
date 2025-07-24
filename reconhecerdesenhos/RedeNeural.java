@@ -1,5 +1,7 @@
 package reconhecerdesenhos;
 
+import java.io.*;
+
 public class RedeNeural {
     double y1 = 0;
     double h1 = 0;// dava para montar com vetores mas fiz assim para ficar mais fácil de explicar
@@ -29,6 +31,8 @@ public class RedeNeural {
          */
         w11 = 1;
         w12 = 0.5;
+        // Tenta carregar pesos do arquivo
+        carregarPesos("pesos_rede.txt");
     }
 
     public void setEntrada(int[] projVertical, int[] projHorizontal) {
@@ -69,6 +73,55 @@ public class RedeNeural {
             return 1;
         }
         return 0;
+    }
+
+    public void treinar(int target, double limiar) {
+        // 1. Calcula a saída atual
+        aplica(limiar); // Atualiza y1, h1, h2
+
+        // 2. Calcula o erro
+        double erro = target - y1;
+
+        // 3. Taxa de aprendizado
+        double taxaAprendizado = 0.001;
+
+        // 4. Ajusta os pesos
+        for (int i = 0; i < v1k.length; i++) {
+            v1k[i] += taxaAprendizado * erro * xk[i];
+            v2k[i] += taxaAprendizado * erro * xk[i];
+        }
+        w11 += taxaAprendizado * erro * h1;
+        w12 += taxaAprendizado * erro * h2;
+        salvarPesos("pesos_rede.txt");
+    }
+
+    public void salvarPesos(String caminho) {
+        try (PrintWriter pw = new PrintWriter(new FileWriter(caminho))) {
+            pw.println(w11);
+            pw.println(w12);
+            for (double v : v1k)
+                pw.println(v);
+            for (double v : v2k)
+                pw.println(v);
+        } catch (IOException e) {
+            System.out.println("Erro ao salvar pesos: " + e.getMessage());
+        }
+    }
+
+    public void carregarPesos(String caminho) {
+        File f = new File(caminho);
+        if (!f.exists())
+            return; // Se não existe, mantém os valores padrão
+        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+            w11 = Double.parseDouble(br.readLine());
+            w12 = Double.parseDouble(br.readLine());
+            for (int i = 0; i < v1k.length; i++)
+                v1k[i] = Double.parseDouble(br.readLine());
+            for (int i = 0; i < v2k.length; i++)
+                v2k[i] = Double.parseDouble(br.readLine());
+        } catch (IOException | NumberFormatException e) {
+            System.out.println("Erro ao carregar pesos: " + e.getMessage());
+        }
     }
 
     public void printModelo() {
