@@ -8,30 +8,16 @@ public class RedeNeural {
     double w11 = 0;
     double h2 = 0;
     double w12 = 0; // Pesos da camada de saída
-    double[] v1k = new double[80]; // Pesos da primeira camada oculta (80 características por bolinha)
-    double[] v2k = new double[80]; // Pesos da segunda camada oculta (80 características por bolinha)
-    double[] xk = new double[80]; // Entrada - características por bolinha [grau, dist, grau, dist, ...]
+    double[] v1k = new double[19]; // Pesos da primeira camada oculta (19 características estruturais)
+    double[] v2k = new double[19]; // Pesos da segunda camada oculta (19 características estruturais)
+    double[] xk = new double[19]; // Entrada - características estruturais
     int contUsos = 0;
     boolean emUso = false;
     int saida = 0;
 
-    public RedeNeural(double[] featuresPorBolinha) {
-        // configura entrada com as características por bolinha
-        for (int c = 0; c < 80; c++) {
-            this.xk[c] = normalizarCaracteristicaPorBolinha(featuresPorBolinha[c], c);
-        }
-
-        // Inicializa pesos com valores padrão
-        inicializarPesosPadrao();
-
-        // Tenta carregar pesos do arquivo
-        carregarPesos("pesos_rede.txt");
-    }
-
     public RedeNeural(int[] featuresEstruturais) {
-        // configura entrada com as características estruturais (mantido para
-        // compatibilidade)
-        for (int c = 0; c < 15; c++) {
+        // configura entrada com as características estruturais
+        for (int c = 0; c < 19; c++) {
             this.xk[c] = normalizarCaracteristica(featuresEstruturais[c], c);
         }
 
@@ -57,98 +43,75 @@ public class RedeNeural {
     }
 
     /**
-     * Inicializa pesos com valores padrão para características por bolinha
+     * Inicializa pesos com valores padrão para características estruturais
      */
     private void inicializarPesosPadrao() {
         w11 = 0.1; // Reduzido drasticamente para evitar overflow
         w12 = 0.1; // Reduzido drasticamente para evitar overflow
 
         // Inicializa v1k com valores muito conservadores
-        for (int i = 0; i < 80; i++) {
+        for (int i = 0; i < 19; i++) {
             v1k[i] = 0.1; // Valores muito baixos para evitar overflow
         }
 
         // Inicializa v2k com valores muito conservadores
-        for (int i = 0; i < 80; i++) {
+        for (int i = 0; i < 19; i++) {
             v2k[i] = 0.1; // Valores muito baixos para evitar overflow
         }
     }
 
-    public void setEntrada(double[] featuresPorBolinha) {
-        // configura entrada com as características por bolinha normalizadas
-        for (int c = 0; c < 80; c++) {
-            this.xk[c] = normalizarCaracteristicaPorBolinha(featuresPorBolinha[c], c);
-        }
-        contUsos = 0;
-    }
-
     public void setEntrada(int[] featuresEstruturais) {
-        // configura entrada com as características estruturais normalizadas (mantido
-        // para compatibilidade)
-        for (int c = 0; c < 15; c++) {
+        // configura entrada com as características estruturais normalizadas
+        for (int c = 0; c < 19; c++) {
             this.xk[c] = normalizarCaracteristica(featuresEstruturais[c], c);
         }
         contUsos = 0;
     }
 
     /**
-     * Normaliza cada característica por bolinha para evitar overflow
-     */
-    private double normalizarCaracteristicaPorBolinha(double valor, int indice) {
-        // Para cada bolinha: [grau, distância_em_nós]
-        // Grau: 0-10 (normalmente 1-4 para boneco palito)
-        // Distância: 0-999 (0 = nó central, 999 = desconectado)
-
-        if (indice % 2 == 0) {
-            // É um grau (índices pares: 0, 2, 4, ...)
-            return Math.min(valor, 10) / 10.0; // Normaliza grau para 0-1
-        } else {
-            // É uma distância (índices ímpares: 1, 3, 5, ...)
-            if (valor >= 999) {
-                return 1.0; // Bolinha desconectada
-            } else {
-                return Math.min(valor, 10) / 10.0; // Normaliza distância para 0-1 (máx 10 saltos)
-            }
-        }
-    }
-
-    /**
-     * Normaliza cada característica estrutural para evitar overflow (mantido para
-     * compatibilidade)
+     * Normaliza cada característica estrutural para evitar overflow
      */
     private double normalizarCaracteristica(int valor, int indice) {
-        // Normaliza baseado no tipo de característica
+        // Normaliza baseado no tipo de característica estrutural
         switch (indice) {
             case 0: // Total bolinhas (0-50)
                 return Math.min(valor, 50) / 50.0;
-            case 1: // Nós do grafo (0-50)
-                return Math.min(valor, 50) / 50.0;
-            case 2: // Arestas do grafo (0-100)
-                return Math.min(valor, 100) / 100.0;
-            case 3: // Grau médio (0-10)
+            case 1: // Extremidades grau 1 (0-10)
                 return Math.min(valor, 10) / 10.0;
-            case 4: // Grau máximo (0-20)
+            case 2: // Linhas grau 2 (0-20)
                 return Math.min(valor, 20) / 20.0;
-            case 5: // Grau mínimo (0-5)
+            case 3: // Junções grau 3 (0-10)
+                return Math.min(valor, 10) / 10.0;
+            case 4: // Centros grau 4+ (0-5)
                 return Math.min(valor, 5) / 5.0;
-            case 6: // Extremidades (0-10)
-                return Math.min(valor, 10) / 10.0;
-            case 7: // Linhas (0-20)
-                return Math.min(valor, 20) / 20.0;
-            case 8: // Junções (0-50)
+            case 5: // Caminhos 1 salto (0-50)
                 return Math.min(valor, 50) / 50.0;
-            case 9: // Largura crop (0-200)
-                return Math.min(valor, 200) / 200.0;
-            case 10: // Altura crop (0-400)
-                return Math.min(valor, 400) / 400.0;
-            case 11: // Proporção W/H (0-30)
+            case 6: // Caminhos 2 saltos (0-100)
+                return Math.min(valor, 100) / 100.0;
+            case 7: // Caminhos 3 saltos (0-50)
+                return Math.min(valor, 50) / 50.0;
+            case 8: // Caminhos 4+ saltos (0-30)
                 return Math.min(valor, 30) / 30.0;
-            case 12: // Densidade (0-1000)
+            case 9: // Ramificações simples (0-10)
+                return Math.min(valor, 10) / 10.0;
+            case 10: // Ramificações complexas (0-5)
+                return Math.min(valor, 5) / 5.0;
+            case 11: // Cadeias lineares (0-20)
+                return Math.min(valor, 20) / 20.0;
+            case 12: // Largura crop (0-200)
+                return Math.min(valor, 200) / 200.0;
+            case 13: // Altura crop (0-400)
+                return Math.min(valor, 400) / 400.0;
+            case 14: // Proporção W/H (0-30)
+                return Math.min(valor, 30) / 30.0;
+            case 15: // Densidade (0-1000)
                 return Math.min(valor, 1000) / 1000.0;
-            case 13: // Simetria grafo (0-10)
+            case 16: // Simetria estrutural (0-10)
                 return valor / 10.0;
-            case 14: // Estrutura grafo (0-1)
+            case 17: // Estrutura padrões (0-1)
                 return valor;
+            case 18: // Tamanho do tronco (0-15)
+                return Math.min(valor, 15) / 15.0;
             default:
                 return Math.min(valor, 100) / 100.0; // Normalização padrão
         }
@@ -247,7 +210,7 @@ public class RedeNeural {
      */
     public void reinicializarPesos() {
         inicializarPesosPadrao();
-        System.out.println("Pesos reinicializados com valores padrão (80 características por bolinha).");
+        System.out.println("Pesos reinicializados com valores padrão (19 características estruturais).");
     }
 
     public void treinar(int target, double limiar) {
