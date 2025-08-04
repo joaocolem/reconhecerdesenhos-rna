@@ -110,7 +110,7 @@ public class ThreadBolinhaEx extends JPanel {
             RedeNeural rn = new RedeNeural(featuresEstruturais);
             ultimaRedeNeural = rn; // Guarda a última rede neural usada
             if (rn.contUsos == 0)
-                rn.aplica(47);// 49
+                rn.aplica(140);// 47
             if (rn.saida == 1 && rn.contUsos == 1) {
                 g.setColor(Color.BLUE);
                 g.drawString("É um boneco palito!", 10, 10);
@@ -128,12 +128,14 @@ public class ThreadBolinhaEx extends JPanel {
     /**
      * Analisa se o desenho representa um boneco palito usando processamento de
      * imagem
-     * Nova abordagem: matriz binária, contornos, momentos de imagem
+     * REMOVIDO: Método que usava matriz binária foi removido conforme solicitado
      */
-    public int[] analisarBonecoPalitoProcessamentoImagem(Bolinha[] bolinhas) {
-        AnaliseEstrutural analise = new AnaliseEstrutural();
-        return analise.analisarBonecoPalitoProcessamentoImagem(bolinhas);
-    }
+    /*
+     * public int[] analisarBonecoPalitoProcessamentoImagem(Bolinha[] bolinhas) {
+     * AnaliseEstrutural analise = new AnaliseEstrutural();
+     * return analise.analisarBonecoPalitoProcessamentoImagem(bolinhas);
+     * }
+     */
 
     /**
      * Analisa se o desenho representa um boneco palito usando padrões estruturais
@@ -180,7 +182,6 @@ public class ThreadBolinhaEx extends JPanel {
     static class PainelProcessamento extends JPanel {
         private Bolinha[] bolinhasCropadas = null;
         private Bolinha[] bolinhasNormalizadas = null;
-        private int[][] matrizBinaria = null;
 
         public void atualizarVisualizacao(Bolinha[] bolinhasOriginais) {
             AnaliseEstrutural analise = new AnaliseEstrutural();
@@ -194,9 +195,6 @@ public class ThreadBolinhaEx extends JPanel {
             // 3. Para análise de grafos, não precisamos normalizar orientação
             bolinhasNormalizadas = bolinhasCropadas;
 
-            // 4. Converte para matriz binária para visualização
-            matrizBinaria = analise.converterParaMatrizBinaria(bolinhasNormalizadas);
-
             repaint();
         }
 
@@ -207,8 +205,8 @@ public class ThreadBolinhaEx extends JPanel {
             int largura = getWidth();
             int altura = getHeight();
 
-            // Divide o painel em 3 seções
-            int secaoLargura = largura / 3;
+            // Divide o painel em 2 seções
+            int secaoLargura = largura / 2;
 
             // Seção 1: Desenho original (crop)
             g.setColor(Color.WHITE);
@@ -228,16 +226,6 @@ public class ThreadBolinhaEx extends JPanel {
 
             if (bolinhasNormalizadas != null) {
                 desenharGrafoConectividade(g, bolinhasNormalizadas, secaoLargura, 0, secaoLargura, altura);
-            }
-
-            // Seção 3: Matriz binária
-            g.setColor(Color.WHITE);
-            g.fillRect(2 * secaoLargura, 0, secaoLargura, altura);
-            g.setColor(Color.BLACK);
-            g.drawString("Matriz Binária", 2 * secaoLargura + 10, 20);
-
-            if (matrizBinaria != null) {
-                desenharMatrizBinaria(g, matrizBinaria, 2 * secaoLargura, 0, secaoLargura, altura);
             }
         }
 
@@ -329,32 +317,7 @@ public class ThreadBolinhaEx extends JPanel {
             }
         }
 
-        private void desenharMatrizBinaria(Graphics g, int[][] matriz, int offsetX, int offsetY, int largura,
-                int altura) {
-            if (matriz == null || matriz.length == 0)
-                return;
-
-            int matrizAltura = matriz.length;
-            int matrizLargura = matriz[0].length;
-
-            int pixelLargura = (largura - 40) / matrizLargura;
-            int pixelAltura = (altura - 40) / matrizAltura;
-
-            for (int y = 0; y < matrizAltura; y++) {
-                for (int x = 0; x < matrizLargura; x++) {
-                    int pixelX = offsetX + 20 + x * pixelLargura;
-                    int pixelY = offsetY + 20 + y * pixelAltura;
-
-                    if (matriz[y][x] == 1) {
-                        g.setColor(Color.BLACK);
-                    } else {
-                        g.setColor(Color.WHITE);
-                    }
-
-                    g.fillRect(pixelX, pixelY, pixelLargura, pixelAltura);
-                }
-            }
-        }
+        // The desenharMatrizBinaria method is removed as per the edit hint.
     }
 
     /**
@@ -378,7 +341,7 @@ public class ThreadBolinhaEx extends JPanel {
         JButton btnTreinar = new JButton("Treinar");
         btnTreinar.addActionListener(e -> {
             if (painel.ultimaRedeNeural != null) {
-                painel.ultimaRedeNeural.treinar(47, 47);
+                painel.ultimaRedeNeural.treinar(47, 140);
                 System.out.println("Treinamento realizado!");
                 painel.ultimaRedeNeural.printModelo(); // Mostra os pesos atualizados
             } else {

@@ -4,6 +4,9 @@ import java.util.*;
 
 public class AnaliseGrafo {
 
+    // Constante para o threshold de conexão
+    private static final double THRESHOLD_CONEXAO = 30.0;
+
     public static class Componente {
         List<Bolinha> bolinhas;
         Set<Integer> indices;
@@ -101,7 +104,7 @@ public class AnaliseGrafo {
                     continue;
 
                 double distancia = calcularDistancia(bolinhas[i], bolinhas[j]);
-                if (distancia <= 50.0) { // Threshold de 50 pixels
+                if (distancia <= THRESHOLD_CONEXAO) { // Threshold de 50 pixels
                     grafo.adicionarAresta(indices[i], indices[j]);
                 }
             }

@@ -4,6 +4,9 @@ import java.util.*;
 
 public class AnaliseEstrutural {
 
+    // Constante para o threshold de conexão
+    private static final double THRESHOLD_CONEXAO = 30.0;
+
     /**
      * Analisa o boneco palito baseado em grau e distância em nós para cada bolinha
      * Nova abordagem: cada bolinha é uma entrada com [grau,
@@ -79,7 +82,7 @@ public class AnaliseEstrutural {
                 for (int j = 0; j < bolinhas.length; j++) {
                     if (i != j && bolinhas[j] != null) {
                         double distancia = calcularDistancia(bolinhas[i], bolinhas[j]);
-                        if (distancia <= 25) { // Threshold reduzido de 40 para 25
+                        if (distancia <= THRESHOLD_CONEXAO) { // Threshold reduzido de 40 para 25
                             grau++;
                         }
                     }
@@ -138,7 +141,7 @@ public class AnaliseEstrutural {
                 if (vizinho != atual && bolinhas[vizinho] != null && !visitado[vizinho]) {
                     // Verifica se são conectados
                     double distancia = calcularDistancia(bolinhas[atual], bolinhas[vizinho]);
-                    if (distancia <= 25) { // Threshold reduzido de 40 para 25
+                    if (distancia <= THRESHOLD_CONEXAO) { // Threshold reduzido de 40 para 25
                         distancias[vizinho] = distancias[atual] + 1;
                         visitado[vizinho] = true;
                         fila.add(vizinho);
@@ -544,7 +547,7 @@ public class AnaliseEstrutural {
         for (int i = 0; i < bolinhas.length; i++) {
             if (bolinhas[i] != null && !visitado[i]) {
                 List<Bolinha> componente = new ArrayList<>();
-                dfsComponente(bolinhas, i, componente, visitado, 60.0); // Threshold maior para conexão
+                dfsComponente(bolinhas, i, componente, visitado, THRESHOLD_CONEXAO); // Threshold maior para conexão
                 if (!componente.isEmpty()) {
                     componentes.add(componente);
                 }
@@ -1050,7 +1053,7 @@ public class AnaliseEstrutural {
                 for (int j = 0; j < bolinhas.length; j++) {
                     if (i != j && bolinhas[j] != null) {
                         double distancia = calcularDistancia(bolinhas[i], bolinhas[j]);
-                        if (distancia <= 25) { // Threshold reduzido de 40 para 25
+                        if (distancia <= THRESHOLD_CONEXAO) { // Threshold reduzido de 40 para 25
                             grau++;
                             numConexoes++;
                         }
@@ -1088,7 +1091,7 @@ public class AnaliseEstrutural {
                 for (int j = 0; j < bolinhas.length; j++) {
                     if (i != j && bolinhas[j] != null) {
                         double distancia = calcularDistancia(bolinhas[i], bolinhas[j]);
-                        if (distancia <= 25) {
+                        if (distancia <= THRESHOLD_CONEXAO) {
                             grau++;
                         }
                     }
@@ -1324,53 +1327,6 @@ public class AnaliseEstrutural {
     }
 
     /**
-     * Analisa o boneco palito usando processamento de imagem simples
-     * Nova abordagem: matriz binária, contornos, momentos de imagem
-     */
-    public int[] analisarBonecoPalitoProcessamentoImagem(Bolinha[] bolinhas) {
-        int[] features = new int[8]; // 8 características simples
-
-        // 1. Remove bolinhas desconectadas (ruído)
-        Bolinha[] bolinhasFiltradas = removerBolinhasDesconectadas(bolinhas);
-
-        // 2. Faz crop inteligente (centraliza e recorta área útil)
-        Bolinha[] bolinhasCropadas = fazerCropInteligente(bolinhasFiltradas);
-
-        // 3. Normaliza orientação (cabeça sempre para cima)
-        Bolinha[] bolinhasNormalizadas = normalizarOrientacao(bolinhasCropadas);
-
-        // 4. Converte para matriz binária
-        int[][] matrizBinaria = converterParaMatrizBinaria(bolinhasNormalizadas);
-
-        // 5. Calcula características de processamento de imagem
-        features[0] = contarBolinhasValidas(bolinhasNormalizadas); // Total de bolinhas
-
-        // 6. Análise de contorno
-        int[] contorno = analisarContorno(matrizBinaria);
-        features[1] = contorno[0]; // Perímetro do contorno
-        features[2] = contorno[1]; // Área do contorno
-
-        // 7. Momentos de imagem (orientação-invariante)
-        double[] momentos = calcularMomentosImagem(matrizBinaria);
-        features[3] = (int) (momentos[0] * 1000); // Momento de área normalizado
-        features[4] = (int) (momentos[1] * 1000); // Excentricidade
-
-        // 8. Características geométricas simples
-        double[] limites = calcularLimites(bolinhasNormalizadas);
-        features[5] = (int) (limites[1] - limites[0]); // Largura
-        features[6] = (int) (limites[3] - limites[2]); // Altura
-
-        // 9. Proporção simples
-        if (features[6] > 0) {
-            features[7] = (features[5] * 10) / features[6]; // Proporção W/H * 10
-        } else {
-            features[7] = 0;
-        }
-
-        return features;
-    }
-
-    /**
      * Calcula a distribuição de graus das bolinhas
      * Retorna: [grau1, grau2, grau3, grau4+]
      */
@@ -1383,7 +1339,7 @@ public class AnaliseEstrutural {
                 for (int j = 0; j < bolinhas.length; j++) {
                     if (i != j && bolinhas[j] != null) {
                         double distancia = calcularDistancia(bolinhas[i], bolinhas[j]);
-                        if (distancia <= 25) { // Threshold reduzido de 40 para 25
+                        if (distancia <= THRESHOLD_CONEXAO) { // Threshold reduzido de 40 para 25
                             grau++;
                         }
                     }
@@ -1491,7 +1447,7 @@ public class AnaliseEstrutural {
         for (int j = 0; j < bolinhas.length; j++) {
             if (indice != j && bolinhas[j] != null) {
                 double distancia = calcularDistancia(bolinhas[indice], bolinhas[j]);
-                if (distancia <= 25) {
+                if (distancia <= THRESHOLD_CONEXAO) {
                     grau++;
                 }
             }
@@ -1515,7 +1471,7 @@ public class AnaliseEstrutural {
             for (int i = 0; i < bolinhas.length; i++) {
                 if (i != atual && bolinhas[i] != null && !visitado[i]) {
                     double distancia = calcularDistancia(bolinhas[atual], bolinhas[i]);
-                    if (distancia <= 25 && calcularGrauBolinha(bolinhas, i) == 2) {
+                    if (distancia <= THRESHOLD_CONEXAO && calcularGrauBolinha(bolinhas, i) == 2) {
                         proximo = i;
                         break;
                     }
@@ -1608,146 +1564,6 @@ public class AnaliseEstrutural {
                 ", caminhos1=" + features[5] + ", proporcao=" + features[14] + ", densidade=" + features[15]);
 
         return 1;
-    }
-
-    /**
-     * Converte bolinhas para matriz binária
-     */
-    public int[][] converterParaMatrizBinaria(Bolinha[] bolinhas) {
-        // Encontra limites
-        double[] limites = calcularLimites(bolinhas);
-        int minX = (int) limites[0];
-        int maxX = (int) limites[1];
-        int minY = (int) limites[2];
-        int maxY = (int) limites[3];
-
-        int largura = maxX - minX + 1;
-        int altura = maxY - minY + 1;
-
-        // Cria matriz binária
-        int[][] matriz = new int[altura][largura];
-
-        // Preenche com bolinhas (1 = bolinha, 0 = fundo)
-        for (Bolinha b : bolinhas) {
-            if (b != null) {
-                int x = (int) b.x - minX;
-                int y = (int) b.y - minY;
-
-                // Marca a bolinha e sua vizinhança (dilatação simples)
-                for (int dy = -2; dy <= 2; dy++) {
-                    for (int dx = -2; dx <= 2; dx++) {
-                        int nx = x + dx;
-                        int ny = y + dy;
-                        if (nx >= 0 && nx < largura && ny >= 0 && ny < altura) {
-                            matriz[ny][nx] = 1;
-                        }
-                    }
-                }
-            }
-        }
-
-        return matriz;
-    }
-
-    /**
-     * Analisa contorno da imagem binária
-     */
-    private int[] analisarContorno(int[][] matriz) {
-        int altura = matriz.length;
-        int largura = matriz[0].length;
-
-        int perimetro = 0;
-        int area = 0;
-
-        // Calcula área (pixels brancos)
-        for (int y = 0; y < altura; y++) {
-            for (int x = 0; x < largura; x++) {
-                if (matriz[y][x] == 1) {
-                    area++;
-
-                    // Verifica se é borda (tem vizinho branco)
-                    boolean isBorda = false;
-                    for (int dy = -1; dy <= 1; dy++) {
-                        for (int dx = -1; dx <= 1; dx++) {
-                            int nx = x + dx;
-                            int ny = y + dy;
-                            if (nx >= 0 && nx < largura && ny >= 0 && ny < altura) {
-                                if (matriz[ny][nx] == 0) {
-                                    isBorda = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (isBorda)
-                            break;
-                    }
-
-                    if (isBorda) {
-                        perimetro++;
-                    }
-                }
-            }
-        }
-
-        return new int[] { perimetro, area };
-    }
-
-    /**
-     * Calcula momentos de imagem (orientação-invariante)
-     */
-    private double[] calcularMomentosImagem(int[][] matriz) {
-        int altura = matriz.length;
-        int largura = matriz[0].length;
-
-        // Calcula centro de massa
-        double somaX = 0, somaY = 0, area = 0;
-
-        for (int y = 0; y < altura; y++) {
-            for (int x = 0; x < largura; x++) {
-                if (matriz[y][x] == 1) {
-                    somaX += x;
-                    somaY += y;
-                    area++;
-                }
-            }
-        }
-
-        if (area == 0) {
-            return new double[] { 0, 0 };
-        }
-
-        double centroX = somaX / area;
-        double centroY = somaY / area;
-
-        // Calcula momentos centrais
-        double m20 = 0, m02 = 0, m11 = 0;
-
-        for (int y = 0; y < altura; y++) {
-            for (int x = 0; x < largura; x++) {
-                if (matriz[y][x] == 1) {
-                    double dx = x - centroX;
-                    double dy = y - centroY;
-                    m20 += dx * dx;
-                    m02 += dy * dy;
-                    m11 += dx * dy;
-                }
-            }
-        }
-
-        // Normaliza momentos
-        m20 /= area;
-        m02 /= area;
-        m11 /= area;
-
-        // Calcula características invariantes
-        double momentoArea = Math.sqrt(m20 + m02); // Momento de área
-        double excentricidade = Math.sqrt(4 * m11 * m11 + (m20 - m02) * (m20 - m02)) / (m20 + m02);
-
-        if (Double.isNaN(excentricidade)) {
-            excentricidade = 0;
-        }
-
-        return new double[] { momentoArea, excentricidade };
     }
 
     /**

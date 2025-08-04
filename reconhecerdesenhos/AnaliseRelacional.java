@@ -5,6 +5,9 @@ import java.util.*;
 
 public class AnaliseRelacional {
 
+    // Constante para o threshold de conexão
+    private static final double THRESHOLD_CONEXAO = 30.0;
+
     public static class Ponto {
         double x, y;
 
@@ -79,7 +82,7 @@ public class AnaliseRelacional {
         for (int i = 0; i < bolinhas.length; i++) {
             if (bolinhas[i] != null && !visitado[i]) {
                 Grupo grupo = new Grupo();
-                dfsAgrupar(bolinhas, i, grupo, visitado, 50.0); // Threshold de 50 pixels
+                dfsAgrupar(bolinhas, i, grupo, visitado, THRESHOLD_CONEXAO); // Threshold de 50 pixels
                 if (grupo.size() > 0) {
                     grupos.add(grupo);
                 }
