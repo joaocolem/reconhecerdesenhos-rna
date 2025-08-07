@@ -11,7 +11,6 @@ public class Bolinha {
     int cont = 0;
     int contColisoes = 0;
     int velocidade = 0;
-    RedeNeural redeNeural;
     boolean acertou = false;
     int pontos = 0;
     int pontosGeral = 0;

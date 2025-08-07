@@ -3,8 +3,10 @@ package reconhecerdesenhos;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.util.Random;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -13,12 +15,14 @@ import javax.swing.JButton;
 import java.io.File;
 
 /**
- * Reconhecedor de Boneco Palito - Abordagem Simples
- * Usa grade 5x5 normalizada para reconhecimento
+ * Reconhecedor de Boneco Palito - Abordagem Baseada em Pixels
+ * Usa representação 50x50 pixels para reconhecimento
  */
 public class ThreadBolinhaEx extends JPanel {
     static int contBolinhas = 0;
-    RedeNeural ultimaRedeNeural = null; // Guarda a última rede neural usada
+    RedeNeuralPixels ultimaRedeNeural = null; // Nova rede neural para pixels
+    AnalisePixel analisePixel = new AnalisePixel(); // Nova análise baseada em pixels
+    boolean analiseJaFeita = false; // Controla se a análise já foi executada
 
     // Janela para mostrar o processamento de imagem
     static JFrame janelaProcessamento = null;
@@ -83,89 +87,56 @@ public class ThreadBolinhaEx extends JPanel {
             g.fillOval(b.x, b.y, 30, 30);
         }
 
-        if (contBolinhas >= bolinhas.length) {
-            int[] featuresEstruturais = this.analisarBonecoPalitoPadroesEstruturais(bolinhasThread.bolinhas);
+        if (contBolinhas >= bolinhas.length && !analiseJaFeita) {
+            // Marca que a análise foi feita
+            analiseJaFeita = true;
 
-            // Debug: mostra as características estruturais do boneco palito
-            System.out.println("Características estruturais do boneco palito:");
-            String[] nomes = {
-                    "Total bolinhas", "Extremidades (grau 1)", "Linhas (grau 2)", "Junções (grau 3)",
-                    "Centros (grau 4+)",
-                    "Caminhos 1 salto", "Caminhos 2 saltos", "Caminhos 3 saltos", "Caminhos 4+ saltos",
-                    "Ramificações simples", "Ramificações complexas", "Cadeias lineares",
-                    "Largura crop", "Altura crop", "Proporção W/H", "Densidade", "Simetria estrutural",
-                    "Estrutura padrões", "Tamanho do tronco"
-            };
+            // Nova abordagem: análise baseada em pixels
+            double[] pixels = analisePixel.analisarPixelInvariante(bolinhasThread.bolinhas);
 
-            for (int i = 0; i < featuresEstruturais.length; i++) {
-                System.out.println(nomes[i] + ": " + featuresEstruturais[i]);
+            // Debug: mostra informações sobre os pixels
+            System.out.println("Análise baseada em pixels (50x50):");
+            System.out.println("Total de pixels: " + pixels.length);
+
+            // Conta pixels ativos (não brancos)
+            int pixelsAtivos = 0;
+            for (double pixel : pixels) {
+                if (pixel > 0.1) { // Threshold para considerar pixel ativo
+                    pixelsAtivos++;
+                }
             }
-            System.out.println();
+            System.out.println("Pixels ativos: " + pixelsAtivos + " (" + (pixelsAtivos * 100.0 / pixels.length) + "%)");
 
-            // Atualiza a visualização do processamento
-            if (painelProcessamento != null) {
-                painelProcessamento.atualizarVisualizacao(bolinhasThread.bolinhas);
-            }
+            // Cria nova rede neural para pixels
+            ultimaRedeNeural = new RedeNeuralPixels();
+            ultimaRedeNeural.setEntrada(pixels);
 
-            RedeNeural rn = new RedeNeural(featuresEstruturais);
-            ultimaRedeNeural = rn; // Guarda a última rede neural usada
-            if (rn.contUsos == 0)
-                rn.aplica(140);// 47
-            if (rn.saida == 1 && rn.contUsos == 1) {
+            // Classifica o desenho
+            boolean ehBonecoPalito = ultimaRedeNeural.classificar();
+
+            System.out.println("Classificação: " + (ehBonecoPalito ? "É um boneco palito" : "Não é um boneco palito"));
+
+            // Mostra resultado na tela
+            if (ehBonecoPalito) {
                 g.setColor(Color.BLUE);
-                g.drawString("É um boneco palito!", 10, 10);
-                System.out.println("é um boneco palito");
-                rn.contUsos++;
-            } else if (rn.saida == 0 && rn.contUsos == 1) {
+                g.drawString("É um boneco palito!", 10, 20);
+            } else {
                 g.setColor(Color.RED);
-                g.drawString("Não é um boneco palito!", 10, 10);
-                System.out.println("Não é um boneco palito");
-                rn.contUsos++;
+                g.drawString("Não é um boneco palito!", 10, 20);
+            }
+
+            // Atualiza visualização
+            if (painelProcessamento != null) {
+                painelProcessamento.atualizarVisualizacao(bolinhasThread.bolinhas, pixels);
             }
         }
     }
 
     /**
-     * Analisa se o desenho representa um boneco palito usando processamento de
-     * imagem
-     * REMOVIDO: Método que usava matriz binária foi removido conforme solicitado
+     * Analisa se o desenho representa um boneco palito usando pixels 50x50
      */
-    /*
-     * public int[] analisarBonecoPalitoProcessamentoImagem(Bolinha[] bolinhas) {
-     * AnaliseEstrutural analise = new AnaliseEstrutural();
-     * return analise.analisarBonecoPalitoProcessamentoImagem(bolinhas);
-     * }
-     */
-
-    /**
-     * Analisa se o desenho representa um boneco palito usando padrões estruturais
-     * (mantido para compatibilidade)
-     * Nova abordagem: análise de caminhos, distribuição de graus e padrões de
-     * ramificação
-     */
-    public int[] analisarBonecoPalitoPadroesEstruturais(Bolinha[] bolinhas) {
-        AnaliseEstrutural analise = new AnaliseEstrutural();
-        return analise.analisarBonecoPalitoPadroesEstruturais(bolinhas);
-    }
-
-    /**
-     * Analisa se o desenho representa um boneco palito usando features por bolinha
-     * (mantido para compatibilidade)
-     * Cada bolinha tem: [grau, distância_em_nós_ao_nó_maior_grau]
-     */
-    public double[] analisarBonecoPalitoPorBolinha(Bolinha[] bolinhas) {
-        AnaliseEstrutural analise = new AnaliseEstrutural();
-        return analise.analisarBonecoPalitoPorBolinha(bolinhas);
-    }
-
-    /**
-     * Analisa se o desenho representa um boneco palito usando análise estrutural
-     * (mantido para compatibilidade)
-     * Detecta: cabeça, tronco, braços, pernas e suas relações
-     */
-    public int[] analisarBonecoPalitoEstrutural(Bolinha[] bolinhas) {
-        AnaliseEstrutural analise = new AnaliseEstrutural();
-        return analise.analisarBonecoPalitoEstrutural(bolinhas);
+    public double[] analisarBonecoPalitoPixels(Bolinha[] bolinhas) {
+        return analisePixel.analisarPixelInvariante(bolinhas);
     }
 
     public static Color gerarCorAleatoriamente() {
@@ -177,23 +148,57 @@ public class ThreadBolinhaEx extends JPanel {
     }
 
     /**
-     * Painel para mostrar o processamento de imagem
+     * Painel para mostrar o processamento de imagem baseado em pixels
      */
     static class PainelProcessamento extends JPanel {
-        private Bolinha[] bolinhasCropadas = null;
-        private Bolinha[] bolinhasNormalizadas = null;
+        private BufferedImage imagemOriginal = null;
+        private BufferedImage imagem50x50 = null;
+        private double[] pixels = null;
 
-        public void atualizarVisualizacao(Bolinha[] bolinhasOriginais) {
-            AnaliseEstrutural analise = new AnaliseEstrutural();
+        public void atualizarVisualizacao(Bolinha[] bolinhasOriginais, double[] pixels) {
+            this.pixels = pixels;
 
-            // 1. Remove bolinhas desconectadas
-            Bolinha[] bolinhasFiltradas = analise.removerBolinhasDesconectadas(bolinhasOriginais);
+            // Cria visualização da imagem original
+            AnalisePixel.BoundingBox bbox = new AnalisePixel.BoundingBox();
+            for (Bolinha b : bolinhasOriginais) {
+                if (b != null) {
+                    bbox.atualizar(b.x, b.y);
+                }
+            }
 
-            // 2. Faz crop inteligente
-            bolinhasCropadas = analise.fazerCropInteligente(bolinhasFiltradas);
+            // Cria imagem original
+            int largura = bbox.getLargura();
+            int altura = bbox.getAltura();
+            int padding = 20;
+            imagemOriginal = new BufferedImage(largura + 2 * padding, altura + 2 * padding, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g2d = imagemOriginal.createGraphics();
 
-            // 3. Para análise de grafos, não precisamos normalizar orientação
-            bolinhasNormalizadas = bolinhasCropadas;
+            // Fundo branco
+            g2d.setColor(Color.WHITE);
+            g2d.fillRect(0, 0, imagemOriginal.getWidth(), imagemOriginal.getHeight());
+
+            // Desenha bolinhas
+            g2d.setColor(Color.BLACK);
+            for (Bolinha b : bolinhasOriginais) {
+                if (b != null) {
+                    int x = b.x - bbox.minX + padding;
+                    int y = b.y - bbox.minY + padding;
+                    g2d.fillOval(x - 5, y - 5, 10, 10);
+                }
+            }
+            g2d.dispose();
+
+            // Cria imagem 50x50
+            imagem50x50 = new BufferedImage(50, 50, BufferedImage.TYPE_INT_RGB);
+            for (int y = 0; y < 50; y++) {
+                for (int x = 0; x < 50; x++) {
+                    int index = y * 50 + x;
+                    double valor = pixels[index];
+                    int intensidade = (int) (255 * (1.0 - valor));
+                    int rgb = (intensidade << 16) | (intensidade << 8) | intensidade;
+                    imagem50x50.setRGB(x, y, rgb);
+                }
+            }
 
             repaint();
         }
@@ -208,116 +213,51 @@ public class ThreadBolinhaEx extends JPanel {
             // Divide o painel em 2 seções
             int secaoLargura = largura / 2;
 
-            // Seção 1: Desenho original (crop)
+            // Seção 1: Imagem original (crop)
             g.setColor(Color.WHITE);
             g.fillRect(0, 0, secaoLargura, altura);
             g.setColor(Color.BLACK);
-            g.drawString("Crop", 10, 20);
+            g.drawString("Imagem Original (Crop)", 10, 20);
 
-            if (bolinhasCropadas != null) {
-                desenharBolinhas(g, bolinhasCropadas, 0, 0, secaoLargura, altura);
+            if (imagemOriginal != null) {
+                // Escala a imagem para caber no painel
+                double escalaX = (double) (secaoLargura - 40) / imagemOriginal.getWidth();
+                double escalaY = (double) (altura - 40) / imagemOriginal.getHeight();
+                double escala = Math.min(escalaX, escalaY);
+
+                int novaLargura = (int) (imagemOriginal.getWidth() * escala);
+                int novaAltura = (int) (imagemOriginal.getHeight() * escala);
+                int offsetX = (secaoLargura - novaLargura) / 2;
+                int offsetY = (altura - novaAltura) / 2 + 20;
+
+                g.drawImage(imagemOriginal, offsetX, offsetY, novaLargura, novaAltura, null);
             }
 
-            // Seção 2: Grafo de conectividade
+            // Seção 2: Imagem 50x50 pixels
             g.setColor(Color.WHITE);
             g.fillRect(secaoLargura, 0, secaoLargura, altura);
             g.setColor(Color.BLACK);
-            g.drawString("Grafo", secaoLargura + 10, 20);
+            g.drawString("Representação 50x50 Pixels", secaoLargura + 10, 20);
 
-            if (bolinhasNormalizadas != null) {
-                desenharGrafoConectividade(g, bolinhasNormalizadas, secaoLargura, 0, secaoLargura, altura);
-            }
-        }
+            if (imagem50x50 != null) {
+                // Desenha a imagem 50x50 ampliada
+                int tamanhoAmpliado = Math.min(secaoLargura - 40, altura - 40);
+                int offsetX = secaoLargura + (secaoLargura - tamanhoAmpliado) / 2;
+                int offsetY = (altura - tamanhoAmpliado) / 2 + 20;
 
-        private void desenharBolinhas(Graphics g, Bolinha[] bolinhas, int offsetX, int offsetY, int largura,
-                int altura) {
-            if (bolinhas == null)
-                return;
+                g.drawImage(imagem50x50, offsetX, offsetY, tamanhoAmpliado, tamanhoAmpliado, null);
 
-            // Encontra limites para escalar
-            double minX = Double.MAX_VALUE, maxX = Double.MIN_VALUE;
-            double minY = Double.MAX_VALUE, maxY = Double.MIN_VALUE;
-
-            for (Bolinha b : bolinhas) {
-                if (b != null) {
-                    minX = Math.min(minX, b.x);
-                    maxX = Math.max(maxX, b.x);
-                    minY = Math.min(minY, b.y);
-                    maxY = Math.max(maxY, b.y);
-                }
-            }
-
-            double escalaX = (largura - 40) / (maxX - minX + 1);
-            double escalaY = (altura - 40) / (maxY - minY + 1);
-            double escala = Math.min(escalaX, escalaY);
-
-            for (Bolinha b : bolinhas) {
-                if (b != null) {
-                    int x = offsetX + 20 + (int) ((b.x - minX) * escala);
-                    int y = offsetY + 20 + (int) ((b.y - minY) * escala);
-
-                    g.setColor(b.cor);
-                    g.fillOval(x, y, 8, 8);
-                }
-            }
-        }
-
-        private void desenharGrafoConectividade(Graphics g, Bolinha[] bolinhas, int offsetX, int offsetY, int largura,
-                int altura) {
-            if (bolinhas == null)
-                return;
-
-            // Encontra limites para escalar
-            double minX = Double.MAX_VALUE, maxX = Double.MIN_VALUE;
-            double minY = Double.MAX_VALUE, maxY = Double.MIN_VALUE;
-
-            for (Bolinha b : bolinhas) {
-                if (b != null) {
-                    minX = Math.min(minX, b.x);
-                    maxX = Math.max(maxX, b.x);
-                    minY = Math.min(minY, b.y);
-                    maxY = Math.max(maxY, b.y);
-                }
-            }
-
-            double escalaX = (largura - 40) / (maxX - minX + 1);
-            double escalaY = (altura - 40) / (maxY - minY + 1);
-            double escala = Math.min(escalaX, escalaY);
-
-            // Desenha as bolinhas
-            for (Bolinha b : bolinhas) {
-                if (b != null) {
-                    int x = offsetX + 20 + (int) ((b.x - minX) * escala);
-                    int y = offsetY + 20 + (int) ((b.y - minY) * escala);
-
-                    g.setColor(b.cor);
-                    g.fillOval(x, y, 8, 8);
-                }
-            }
-
-            // Desenha as conexões (arestas do grafo)
-            g.setColor(Color.RED);
-            for (int i = 0; i < bolinhas.length; i++) {
-                if (bolinhas[i] != null) {
-                    for (int j = i + 1; j < bolinhas.length; j++) {
-                        if (bolinhas[j] != null) {
-                            double distancia = Math.sqrt(Math.pow(bolinhas[i].x - bolinhas[j].x, 2) +
-                                    Math.pow(bolinhas[i].y - bolinhas[j].y, 2));
-                            if (distancia <= 25) { // Threshold reduzido de 40 para 25
-                                int x1 = offsetX + 20 + (int) ((bolinhas[i].x - minX) * escala);
-                                int y1 = offsetY + 20 + (int) ((bolinhas[i].y - minY) * escala);
-                                int x2 = offsetX + 20 + (int) ((bolinhas[j].x - minX) * escala);
-                                int y2 = offsetY + 20 + (int) ((bolinhas[j].y - minY) * escala);
-
-                                g.drawLine(x1 + 4, y1 + 4, x2 + 4, y2 + 4);
-                            }
-                        }
+                // Mostra informações sobre os pixels
+                if (pixels != null) {
+                    int pixelsAtivos = 0;
+                    for (double pixel : pixels) {
+                        if (pixel > 0.1)
+                            pixelsAtivos++;
                     }
+                    g.drawString("Pixels ativos: " + pixelsAtivos + "/2500", secaoLargura + 10, altura - 10);
                 }
             }
         }
-
-        // The desenharMatrizBinaria method is removed as per the edit hint.
     }
 
     /**
@@ -341,9 +281,9 @@ public class ThreadBolinhaEx extends JPanel {
         JButton btnTreinar = new JButton("Treinar");
         btnTreinar.addActionListener(e -> {
             if (painel.ultimaRedeNeural != null) {
-                painel.ultimaRedeNeural.treinar(47, 140);
-                System.out.println("Treinamento realizado!");
-                painel.ultimaRedeNeural.printModelo(); // Mostra os pesos atualizados
+                // Treina com target 10 (queremos que y1 se aproxime de 10)
+                painel.ultimaRedeNeural.treinar(10, 0.0); // Target 10, limiar não usado
+                System.out.println("Treinamento realizado! Target: 10");
             } else {
                 System.out.println("Nenhuma rede neural para treinar.");
             }
@@ -357,6 +297,7 @@ public class ThreadBolinhaEx extends JPanel {
                 bolinhasThread.bolinhas[i] = null;
             }
             painel.ultimaRedeNeural = null;
+            painel.analiseJaFeita = false; // Resetar a flag de análise
 
             // Limpa a tela
             Graphics g = painel.getGraphics();
@@ -367,7 +308,7 @@ public class ThreadBolinhaEx extends JPanel {
 
             // Limpa a visualização de processamento
             if (painelProcessamento != null) {
-                painelProcessamento.atualizarVisualizacao(new Bolinha[0]);
+                painelProcessamento.atualizarVisualizacao(new Bolinha[0], new double[2500]);
             }
 
             System.out.println("Canvas reiniciado! Desenhe um novo boneco palito.");
@@ -378,9 +319,9 @@ public class ThreadBolinhaEx extends JPanel {
         frame.getContentPane().add(painelBotoes, BorderLayout.SOUTH);
 
         // Cria a janela de processamento
-        janelaProcessamento = new JFrame("Processamento de Imagem");
+        janelaProcessamento = new JFrame("Processamento de Imagem - Abordagem Pixels");
         janelaProcessamento.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        janelaProcessamento.setSize(600, 300);
+        janelaProcessamento.setSize(800, 400);
         janelaProcessamento.setLocation(450, 100);
 
         painelProcessamento = new PainelProcessamento();
