@@ -5,19 +5,19 @@ import java.io.*;
 public class RedeNeuralPixels {
     private static final int NUM_ENTRADAS = 2500; // 50x50 pixels
 
-    // Pesos da rede neural (simplificados)
+    // pesos da rede neural (simplificados)
     private double w11 = 1.0;
     private double w12 = 0.5;
     private double[] v1k = new double[NUM_ENTRADAS];
     private double[] v2k = new double[NUM_ENTRADAS];
 
-    // Valores das camadas
+    // valores das camadas
     private double[] xk = new double[NUM_ENTRADAS]; // entrada (pixels)
     private double h1 = 0;
     private double h2 = 0;
     private double y1 = 0;
 
-    // Controle
+    // controle
     private int saida = 0;
 
     public RedeNeuralPixels() {
@@ -26,21 +26,20 @@ public class RedeNeuralPixels {
     }
 
     /**
-     * Inicializa os pesos com valores padrão
+     * inicializa os pesos com valores padrão
      */
     private void inicializarPesos() {
-        // Inicializa v1k e v2k com valores pequenos e balanceados
         for (int i = 0; i < NUM_ENTRADAS; i++) {
-            v1k[i] = 0.01; // Valores pequenos para evitar explosão
+            v1k[i] = 0.01;
             v2k[i] = 0.01;
         }
 
-        w11 = 0.1; // Pesos pequenos
+        w11 = 0.1;
         w12 = 0.1;
     }
 
     /**
-     * Define a entrada da rede neural (array de 2500 pixels)
+     * define a entrada da rede neural (array de 2500 pixels)
      */
     public void setEntrada(double[] pixels) {
         if (pixels.length != NUM_ENTRADAS) {
@@ -49,45 +48,34 @@ public class RedeNeuralPixels {
         System.arraycopy(pixels, 0, xk, 0, NUM_ENTRADAS);
     }
 
-    /**
-     * Aplica a rede neural com função escada
-     */
+    // aplica a rede neural com função escada
     public int aplica(double limiar) {
         y1 = 0;
         h1 = 0;
         h2 = 0;
 
-        // Calcula h1 e h2
         for (int c = 0; c < v1k.length; c++) {
             h1 += v1k[c] * xk[c];
             h2 += v2k[c] * xk[c];
         }
 
-        // Calcula y1
         y1 = (h1 * w11 + h2 * w12);
 
         System.out.println("y1 = " + y1);
 
-        // Aplica função escada
         if (y1 > limiar) {
             return 1;
         }
         return 0;
     }
 
-    /**
-     * Treina a rede neural com target e limiar
-     */
+    // faz um passo de treinamento ajustando os pesos
     public void treinar(int target, double limiar) {
-        // 1. Calcula a saída atual (usa limiar padrão para treinamento)
-        aplica(0.5); // Atualiza y1, h1, h2
+        aplica(0.5);
 
-        // 2. Calcula o erro (target = 10, queremos que y1 se aproxime de 10)
         double erro = target - y1;
 
-        // 3. Taxa de aprendizado aumentada para ser mais efetiva
-        double taxaAprendizado = 0.0001; // Taxa maior para convergência mais rápida
-        // 4. Ajusta os pesos
+        double taxaAprendizado = 0.0001;
         for (int i = 0; i < v1k.length; i++) {
             v1k[i] += taxaAprendizado * erro * xk[i];
             v2k[i] += taxaAprendizado * erro * xk[i];
@@ -98,16 +86,12 @@ public class RedeNeuralPixels {
         salvarPesos("pesos_rede.txt");
     }
 
-    /**
-     * Classifica usando função escada
-     */
+    // classifica usando função escada
     public boolean classificar() {
-        return aplica(10.0) == 1; // Limiar ajustado para 10
+        return aplica(10.0) == 1;
     }
 
-    /**
-     * Salva os pesos da rede neural
-     */
+    // salva os pesos da rede neural
     public void salvarPesos(String caminho) {
         try (PrintWriter pw = new PrintWriter(new FileWriter(caminho))) {
             pw.println(w11);
@@ -121,9 +105,7 @@ public class RedeNeuralPixels {
         }
     }
 
-    /**
-     * Carrega os pesos da rede neural
-     */
+    // carrega os pesos da rede neural
     public void carregarPesos(String caminho) {
         File f = new File(caminho);
         if (!f.exists()) {

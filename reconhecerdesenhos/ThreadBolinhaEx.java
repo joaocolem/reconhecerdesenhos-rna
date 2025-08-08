@@ -15,16 +15,15 @@ import javax.swing.JButton;
 import java.io.File;
 
 /**
- * Reconhecedor de Boneco Palito - Abordagem Baseada em Pixels
- * Usa representação 50x50 pixels para reconhecimento
+ * reconhecedor de boneco palito - abordagem baseada em pixels
+ * usa representação 50x50 pixels para reconhecimento
  */
 public class ThreadBolinhaEx extends JPanel {
     static int contBolinhas = 0;
-    RedeNeuralPixels ultimaRedeNeural = null; // Nova rede neural para pixels
-    AnalisePixel analisePixel = new AnalisePixel(); // Nova análise baseada em pixels
-    boolean analiseJaFeita = false; // Controla se a análise já foi executada
+    RedeNeuralPixels ultimaRedeNeural = null; 
+    AnalisePixel analisePixel = new AnalisePixel(); 
+    boolean analiseJaFeita = false;
 
-    // Janela para mostrar o processamento de imagem
     static JFrame janelaProcessamento = null;
     static PainelProcessamento painelProcessamento = null;
 
@@ -38,14 +37,13 @@ public class ThreadBolinhaEx extends JPanel {
                 }
                 Color cor = Color.green;
                 if (SwingUtilities.isRightMouseButton(me)) {
-                    cor = new Color(150, 75, 0);// marrom
+                    cor = new Color(150, 75, 0);
                 }
                 bolinhasThread.bolinhas[contBolinhas] = new Bolinha("bolinha", cor, mouse_x - 15, mouse_y - 15);
                 contBolinhas++;
             }
         });
 
-        // Adiciona listener para desenho contínuo
         addMouseMotionListener(new MouseAdapter() {
             public void mouseDragged(MouseEvent me) {
                 int mouse_x = me.getX();
@@ -54,13 +52,13 @@ public class ThreadBolinhaEx extends JPanel {
                     return;
                 }
 
-                // Verifica se já existe uma bolinha muito próxima (evita sobreposição)
+                // verifica se já existe uma bolinha muito próxima (evita sobreposição)
                 boolean muitoProximo = false;
                 for (int i = 0; i < contBolinhas; i++) {
                     if (bolinhasThread.bolinhas[i] != null) {
                         double distancia = Math.sqrt(Math.pow(mouse_x - (bolinhasThread.bolinhas[i].x + 15), 2) +
                                 Math.pow(mouse_y - (bolinhasThread.bolinhas[i].y + 15), 2));
-                        if (distancia < 20) { // Se está muito próximo, não adiciona
+                        if (distancia < 20) { // se tá muito próximo, não adiciona
                             muitoProximo = true;
                             break;
                         }
@@ -70,7 +68,7 @@ public class ThreadBolinhaEx extends JPanel {
                 if (!muitoProximo) {
                     Color cor = Color.green;
                     if (SwingUtilities.isRightMouseButton(me)) {
-                        cor = new Color(150, 75, 0);// marrom
+                        cor = new Color(150, 75, 0);
                     }
                     bolinhasThread.bolinhas[contBolinhas] = new Bolinha("bolinha", cor, mouse_x - 15, mouse_y - 15);
                     contBolinhas++;
@@ -88,35 +86,28 @@ public class ThreadBolinhaEx extends JPanel {
         }
 
         if (contBolinhas >= bolinhas.length && !analiseJaFeita) {
-            // Marca que a análise foi feita
             analiseJaFeita = true;
 
-            // Nova abordagem: análise baseada em pixels
             double[] pixels = analisePixel.analisarPixelInvariante(bolinhasThread.bolinhas);
 
-            // Debug: mostra informações sobre os pixels
             System.out.println("Análise baseada em pixels (50x50):");
             System.out.println("Total de pixels: " + pixels.length);
 
-            // Conta pixels ativos (não brancos)
             int pixelsAtivos = 0;
             for (double pixel : pixels) {
-                if (pixel > 0.1) { // Threshold para considerar pixel ativo
+                if (pixel > 0.1) { 
                     pixelsAtivos++;
                 }
             }
             System.out.println("Pixels ativos: " + pixelsAtivos + " (" + (pixelsAtivos * 100.0 / pixels.length) + "%)");
 
-            // Cria nova rede neural para pixels
             ultimaRedeNeural = new RedeNeuralPixels();
             ultimaRedeNeural.setEntrada(pixels);
 
-            // Classifica o desenho
             boolean ehBonecoPalito = ultimaRedeNeural.classificar();
 
             System.out.println("Classificação: " + (ehBonecoPalito ? "É um boneco palito" : "Não é um boneco palito"));
 
-            // Mostra resultado na tela
             if (ehBonecoPalito) {
                 g.setColor(Color.BLUE);
                 g.drawString("É um boneco palito!", 10, 20);
@@ -125,7 +116,6 @@ public class ThreadBolinhaEx extends JPanel {
                 g.drawString("Não é um boneco palito!", 10, 20);
             }
 
-            // Atualiza visualização
             if (painelProcessamento != null) {
                 painelProcessamento.atualizarVisualizacao(bolinhasThread.bolinhas, pixels);
             }
@@ -133,7 +123,7 @@ public class ThreadBolinhaEx extends JPanel {
     }
 
     /**
-     * Analisa se o desenho representa um boneco palito usando pixels 50x50
+     * analisa se o desenho representa um boneco palito usando pixels 50x50
      */
     public double[] analisarBonecoPalitoPixels(Bolinha[] bolinhas) {
         return analisePixel.analisarPixelInvariante(bolinhas);
@@ -147,9 +137,7 @@ public class ThreadBolinhaEx extends JPanel {
         return new Color(r, g, b);
     }
 
-    /**
-     * Painel para mostrar o processamento de imagem baseado em pixels
-     */
+    
     static class PainelProcessamento extends JPanel {
         private BufferedImage imagemOriginal = null;
         private BufferedImage imagem50x50 = null;
@@ -158,7 +146,6 @@ public class ThreadBolinhaEx extends JPanel {
         public void atualizarVisualizacao(Bolinha[] bolinhasOriginais, double[] pixels) {
             this.pixels = pixels;
 
-            // Cria visualização da imagem original
             AnalisePixel.BoundingBox bbox = new AnalisePixel.BoundingBox();
             for (Bolinha b : bolinhasOriginais) {
                 if (b != null) {
@@ -166,18 +153,15 @@ public class ThreadBolinhaEx extends JPanel {
                 }
             }
 
-            // Cria imagem original
             int largura = bbox.getLargura();
             int altura = bbox.getAltura();
             int padding = 20;
             imagemOriginal = new BufferedImage(largura + 2 * padding, altura + 2 * padding, BufferedImage.TYPE_INT_RGB);
             Graphics2D g2d = imagemOriginal.createGraphics();
 
-            // Fundo branco
             g2d.setColor(Color.WHITE);
             g2d.fillRect(0, 0, imagemOriginal.getWidth(), imagemOriginal.getHeight());
 
-            // Desenha bolinhas
             g2d.setColor(Color.BLACK);
             for (Bolinha b : bolinhasOriginais) {
                 if (b != null) {
@@ -188,7 +172,6 @@ public class ThreadBolinhaEx extends JPanel {
             }
             g2d.dispose();
 
-            // Cria imagem 50x50
             imagem50x50 = new BufferedImage(50, 50, BufferedImage.TYPE_INT_RGB);
             for (int y = 0; y < 50; y++) {
                 for (int x = 0; x < 50; x++) {
@@ -210,17 +193,16 @@ public class ThreadBolinhaEx extends JPanel {
             int largura = getWidth();
             int altura = getHeight();
 
-            // Divide o painel em 2 seções
             int secaoLargura = largura / 2;
 
-            // Seção 1: Imagem original (crop)
+            // imagem original (crop)
             g.setColor(Color.WHITE);
             g.fillRect(0, 0, secaoLargura, altura);
             g.setColor(Color.BLACK);
             g.drawString("Imagem Original (Crop)", 10, 20);
 
             if (imagemOriginal != null) {
-                // Escala a imagem para caber no painel
+                // escala a imagem para caber no painel
                 double escalaX = (double) (secaoLargura - 40) / imagemOriginal.getWidth();
                 double escalaY = (double) (altura - 40) / imagemOriginal.getHeight();
                 double escala = Math.min(escalaX, escalaY);
@@ -233,21 +215,20 @@ public class ThreadBolinhaEx extends JPanel {
                 g.drawImage(imagemOriginal, offsetX, offsetY, novaLargura, novaAltura, null);
             }
 
-            // Seção 2: Imagem 50x50 pixels
+            // imagem 50x50 pixels
             g.setColor(Color.WHITE);
             g.fillRect(secaoLargura, 0, secaoLargura, altura);
             g.setColor(Color.BLACK);
             g.drawString("Representação 50x50 Pixels", secaoLargura + 10, 20);
 
             if (imagem50x50 != null) {
-                // Desenha a imagem 50x50 ampliada
+                // 50x50 ampliada
                 int tamanhoAmpliado = Math.min(secaoLargura - 40, altura - 40);
                 int offsetX = secaoLargura + (secaoLargura - tamanhoAmpliado) / 2;
                 int offsetY = (altura - tamanhoAmpliado) / 2 + 20;
 
                 g.drawImage(imagem50x50, offsetX, offsetY, tamanhoAmpliado, tamanhoAmpliado, null);
 
-                // Mostra informações sobre os pixels
                 if (pixels != null) {
                     int pixelsAtivos = 0;
                     for (double pixel : pixels) {
@@ -260,10 +241,6 @@ public class ThreadBolinhaEx extends JPanel {
         }
     }
 
-    /**
-     * A tester method that embeds the panel in a frame so you can
-     * run it as an application.
-     */
     static ThreadBolinhaEx painel = new ThreadBolinhaEx();
     static BolinhasThread bolinhasThread;
 
@@ -275,14 +252,13 @@ public class ThreadBolinhaEx extends JPanel {
         painel = new ThreadBolinhaEx();
         frame.getContentPane().add(painel, BorderLayout.CENTER);
 
-        // Cria o painel de botões
         JPanel painelBotoes = new JPanel();
 
         JButton btnTreinar = new JButton("Treinar");
         btnTreinar.addActionListener(e -> {
             if (painel.ultimaRedeNeural != null) {
-                // Treina com target 10 (queremos que y1 se aproxime de 10)
-                painel.ultimaRedeNeural.treinar(10, 0.0); // Target 10, limiar não usado
+                // treina com target 10 (queremos que y1 se aproxime de 10)
+                painel.ultimaRedeNeural.treinar(10, 0.0); // target 10, limiar não usado
                 System.out.println("Treinamento realizado! Target: 10");
             } else {
                 System.out.println("Nenhuma rede neural para treinar.");
@@ -291,22 +267,19 @@ public class ThreadBolinhaEx extends JPanel {
 
         JButton btnReiniciar = new JButton("Reiniciar");
         btnReiniciar.addActionListener(e -> {
-            // Limpa o canvas
             contBolinhas = 0;
             for (int i = 0; i < bolinhasThread.bolinhas.length; i++) {
                 bolinhasThread.bolinhas[i] = null;
             }
             painel.ultimaRedeNeural = null;
-            painel.analiseJaFeita = false; // Resetar a flag de análise
+            painel.analiseJaFeita = false;
 
-            // Limpa a tela
             Graphics g = painel.getGraphics();
             if (g != null) {
                 g.setColor(Color.WHITE);
                 g.fillRect(0, 0, painel.getWidth(), painel.getHeight());
             }
 
-            // Limpa a visualização de processamento
             if (painelProcessamento != null) {
                 painelProcessamento.atualizarVisualizacao(new Bolinha[0], new double[2500]);
             }
@@ -318,7 +291,6 @@ public class ThreadBolinhaEx extends JPanel {
         painelBotoes.add(btnReiniciar);
         frame.getContentPane().add(painelBotoes, BorderLayout.SOUTH);
 
-        // Cria a janela de processamento
         janelaProcessamento = new JFrame("Processamento de Imagem - Abordagem Pixels");
         janelaProcessamento.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         janelaProcessamento.setSize(800, 400);
